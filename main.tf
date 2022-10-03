@@ -10,18 +10,18 @@ terraform {
 
 provider "proxmox" {
     pm_tls_insecure = true
-    pm_api_url = "https://192.168.2.99:8006/api2/json"
-    pm_password = "soeid1"
-    pm_user = "root@pam"
+    pm_api_url = var.proxmox["pm_api_url"]
+    pm_password = var.proxmox["pm_password"]
+    pm_user = var.proxmox["pm_user"]
     pm_otp = ""
 }
 
-resource "proxmox_vm_qemu" "cloudinit-test" {
-    count = 2
-    name = "tf-vm-${count.index + 1}"
-    target_node = "homelab"
-    vmid = "40${count.index + 1}"
-    clone = "centos"
+resource "proxmox_vm_qemu" "cloudinit-centos" {
+    count = var.agent-count
+    name = "${var.vm-name}-${count.index + 1}"
+    target_node = var.target_node
+    vmid = "${var.node-id-prefix}${count.index + 1}"
+    clone = var.clone-image
 
     agent = 1
 
@@ -48,8 +48,21 @@ resource "proxmox_vm_qemu" "cloudinit-test" {
   
     lifecycle {
       ignore_changes = [
-      network,
+      network
       ]
     }
     ipconfig0 = "ip=192.168.2.15${count.index + 1}/24,gw=192.168.2.1"
+}
+
+resource "local_file" "create-static-ip-file" {
+  count = 1
+  filename = "${path.cwd}/interfaces.${count.index + 1}"
+  content = <<-EOT
+  auto lo
+  iface lo inet loopback
+
+  auto eth0
+  iface eth0 inet dhcp
+  EOT
+  
 }
