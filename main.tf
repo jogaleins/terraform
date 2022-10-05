@@ -66,8 +66,12 @@ resource "proxmox_vm_qemu" "cloudinit-centos" {
 
     provisioner "local-exec" {
         working_dir = "./"
-        command = "ansible-playbook -u ${var.user} --key-file ${var.ssh_keys["priv"]} -i ${var.ips[count.index]} install_packages.yaml"
+        command = "ansible-playbook -u ${var.user} --key-file ${var.ssh_keys["priv"]} -i inventory.ini install_packages.yaml"
     }
+
+    depends_on = [
+      local_file.create-inventory-file
+    ]
 }
 
 resource "local_file" "create-hostname-file" {
@@ -79,4 +83,14 @@ resource "local_file" "create-hostname-file" {
   depends_on = [
     proxmox_vm_qemu.cloudinit-centos
   ]
+}
+
+resource "local_file" "create-inventory-file" {
+  count = 1
+  filename = "${path.cwd}/inventory.ini"
+  content = <<-EOT
+  [kube_agents]
+  ${var.ips[count.index]}
+  EOT
+
 }
