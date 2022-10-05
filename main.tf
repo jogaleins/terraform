@@ -17,7 +17,7 @@ provider "proxmox" {
 }
 
 resource "proxmox_vm_qemu" "cloudinit-centos" {
-    count = var.agent-count
+    count = length(var.hostnames)
     name = "${var.vm-name}-${count.index + 1}"
     target_node = var.target_node
     vmid = "${var.node-id-prefix}${count.index + 1}"
@@ -45,24 +45,33 @@ resource "proxmox_vm_qemu" "cloudinit-centos" {
         model = "virtio"
         bridge = "vmbr0"
     }
-  
+    
+    ipconfig0 = "ip=${var.ips[count.index]}/24,gw=${cidrhost(format("%s/24", var.ips[count.index]), 1)}"
     lifecycle {
       ignore_changes = [
       network
       ]
+    }   
+    connection {
+    host = var.ips[count.index]
+    user = var.user
+    private_key = file(var.ssh_keys["priv"])
+    agent = false
+    timeout = "3m"
     }
-    ipconfig0 = "ip=192.168.2.15${count.index + 1}/24,gw=192.168.2.1"
+    provisioner "remote-exec" {
+	  # Leave this here so we know when to start with Ansible local-exec 
+    inline = [ "echo 'Cool, we are ready for provisioning'"]
+    }
 }
 
-resource "local_file" "create-static-ip-file" {
+resource "local_file" "create-hostname-file" {
   count = 1
-  filename = "${path.cwd}/interfaces.${count.index + 1}"
+  filename = "${path.cwd}/hostname.${count.index + 1}"
   content = <<-EOT
-  auto lo
-  iface lo inet loopback
-
-  auto eth0
-  iface eth0 inet dhcp
+  ${var.vm-name}-${count.index + 1}
   EOT
-  
+  depends_on = [
+    proxmox_vm_qemu.cloudinit-centos
+  ]
 }
