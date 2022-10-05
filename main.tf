@@ -53,21 +53,20 @@ resource "proxmox_vm_qemu" "cloudinit-centos" {
       ]
     }   
     connection {
-    host = var.ips[count.index]
-    user = var.user
-    private_key = file(var.ssh_keys["priv"])
-    agent = false
-    timeout = "3m"
+        host = var.ips[count.index]
+        user = var.user
+        private_key = file(var.ssh_keys["priv"])
+        agent = false
+        timeout = "3m"
     }
 
     provisioner "remote-exec" {
-	  # Leave this here so we know when to start with Ansible local-exec 
-    inline = [ "echo 'Cool, we are ready for provisioning'"]
+        inline = [ "echo 'Cool, we are ready for provisioning'"]
     }
 
     provisioner "local-exec" {
-    working_dir = "./"
-        command = "ansible-playbook -u ${var.user} --key-file ${var.ssh_keys["priv"]} -i ${var.ips[count.index]}, install_packages.yaml"
+        working_dir = "./"
+        command = "ansible-playbook -u ${var.user} --key-file ${var.ssh_keys["priv"]} -i ${var.ips[count.index]} install_packages.yaml"
     }
 }
 
