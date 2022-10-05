@@ -51,4 +51,4 @@ variable "user" {
 	description = "User used to SSH into the machine and provision it"
 }
 
-variable "ssh_password" {}
+#variable "ssh_password" {}
