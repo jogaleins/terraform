@@ -6,12 +6,7 @@
   tasks:
     - name: Install yum packages
       yum:
-        name: '{{ item }}'
+        name: ['epel-release','python3','git','ansible-core']
         state: present
         update_cache: True
-      with_items:
-        - epel-release
-        - python3
-        - git
-        - ansible-core
     

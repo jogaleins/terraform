@@ -36,7 +36,7 @@ resource "proxmox_vm_qemu" "cloudinit-centos" {
     disk {
         size = "10G"
         type = "scsi"
-        storage = "pve-ssd"
+        storage = "local-zfs"
         iothread = 1
         ssd = 1
         discard = "on"
@@ -60,6 +60,10 @@ resource "proxmox_vm_qemu" "cloudinit-centos" {
         timeout = "3m"
     }
 
+    timeouts {
+      create = "20m"
+      delete = "20m"
+    }
     provisioner "remote-exec" {
         inline = [ "echo 'Cool, we are ready for provisioning'"]
     }
@@ -87,10 +91,10 @@ resource "local_file" "create-hostname-file" {
 
 resource "local_file" "create-inventory-file" {
   count = 1
-  filename = "${path.cwd}/inventory.ini"
+  filename = "${path.cwd}/ansible/inventory.ini"
   content = <<-EOT
   [kube_agents]
-  ${var.ips[count.index]}
+  ${var.ips[count.index]} ansible_user=centos
   EOT
 
 }
