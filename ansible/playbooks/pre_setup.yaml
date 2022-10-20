@@ -9,6 +9,9 @@
       include_vars:
         file: vars.yaml
 
+    - name: Delay before installing
+      command: sleep 300
+
     - name: Install yum packages
       yum:
         name: ['epel-release','python3-pip','git','ansible-core','curl','gettext','device-mapper-persistent-data','lvm2']

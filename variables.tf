@@ -32,12 +32,12 @@ variable "vm-name" {
 variable "hostnames" {
   description = "VMs to be created"
   type        = list(string)
-  default     = ["agent-1"]
+  default     = ["agent-1","agent-2"]
 }
 variable "ips" {
     description = "IPs of the VMs, respective to the hostname order"
     type        = list(string)
-	default     = ["192.168.2.151"]
+	default     = ["192.168.2.151","192.168.2.152"]
 }
 variable "ssh_keys" {
 	type = map

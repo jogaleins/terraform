@@ -16,7 +16,7 @@ provider "proxmox" {
     pm_otp = ""
 }
 
-resource "proxmox_vm_qemu" "cloudinit-centos" {
+resource "proxmox_vm_qemu" "tf-agents" {
     count = length(var.hostnames)
     name = "${var.vm-name}-${count.index + 1}"
     target_node = var.target_node
@@ -85,7 +85,7 @@ resource "local_file" "create-hostname-file" {
   ${var.vm-name}-${count.index + 1}
   EOT
   depends_on = [
-    proxmox_vm_qemu.cloudinit-centos
+    proxmox_vm_qemu.tf-agents
   ]
 }
 
