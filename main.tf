@@ -65,7 +65,7 @@ resource "proxmox_vm_qemu" "cloudinit-centos" {
     }
 
     provisioner "local-exec" {
-        working_dir = "./"
+        working_dir = "./ansible"
         command = "ansible-playbook -u ${var.user} --key-file ${var.ssh_keys["priv"]} -i inventory.ini main.yaml"
     }
 
