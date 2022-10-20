@@ -3,10 +3,75 @@
   gather_facts: false
   become: yes
 
+
   tasks:
+    - name: Including the variables
+      include_vars:
+        file: vars.yaml
+
     - name: Install yum packages
       yum:
-        name: ['epel-release','python3','git','ansible-core']
+        name: ['epel-release','python3-pip','git','ansible-core','curl','gettext','device-mapper-persistent-data','lvm2']
         state: present
         update_cache: True
+
+    - name: Set SELINUX to to permissive
+      command: sed -i 's/SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
+
+    - name: Create required containerd modules
+      file:
+        path: "/etc/modules-load.d/containerd.conf"
+        state: "touch"
+
+    - name: Add conf for containerd
+      blockinfile:
+        path: "/etc/modules-load.d/containerd.conf"
+        block: |
+             overlay
+             br_netfilter
     
+
+    - name: Create required containerd modules
+      file:
+        path: "/etc/sysctl.d/99-kubernetes-cri.conf"
+        state: "touch"
+
+    - name: Add sysctl conf for containerd
+      blockinfile:
+        path: "/etc/sysctl.d/99-kubernetes-cri.conf"
+        block: |
+              net.bridge.bridge-nf-call-iptables = 1
+              net.ipv4.ip_forward = 1
+              net.bridge.bridge-nf-call-ip6tables = 1
+
+    - name: Apply new sysctl settings
+      command: sysctl --system
+
+    - name: Install and configure containerd
+      shell: |
+            yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            yum install -y containerd.io
+            mkdir -p /etc/containerd
+            containerd config default > /etc/containerd/config.toml
+            sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+            systemctl restart containerd
+            systemctl enable containerd
+
+    - name: Add kubernetes repo
+      shell: |
+            cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+            [kubernetes]
+            name=Kubernetes
+            baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+            enabled=1
+            gpgcheck=0
+            repo_gpgcheck=0
+            gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+            exclude=kubelet kubeadm kubectl
+            EOF
+
+    - name: Install Kubernetes 
+      yum:
+        state: present
+        name: ['kubectl-{{ kubernetes_version }}','kubelet-{{ kubernetes_version }}','kubeadm-{{ kubernetes_version }}']
+        disable_excludes: "kubernetes"
