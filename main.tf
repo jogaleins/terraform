@@ -23,8 +23,8 @@ resource "proxmox_vm_qemu" "tf-agents" {
     vmid = "${var.node-id-prefix}${count.index + 1}"
     clone = var.clone-image
 
+    
     agent = 1
-
     os_type = "cloud-init"
     cores = 4
     sockets = 1
@@ -79,7 +79,7 @@ resource "proxmox_vm_qemu" "tf-agents" {
 }
 
 resource "local_file" "create-hostname-file" {
-  count = 1
+  count = length(var.hostnames)
   filename = "${path.cwd}/hostname.${count.index + 1}"
   content = <<-EOT
   ${var.vm-name}-${count.index + 1}
@@ -90,11 +90,13 @@ resource "local_file" "create-hostname-file" {
 }
 
 resource "local_file" "create-inventory-file" {
-  count = 1
   filename = "${path.cwd}/ansible/inventory.ini"
   content = <<-EOT
   [kube_agents]
-  ${var.ips[count.index]} ansible_user=centos
+  %{for ip in var.ips ~}
+${ip} ansible_user=centos
+  %{endfor ~}
+  
   EOT
 
 }
