@@ -78,17 +78,6 @@ resource "proxmox_vm_qemu" "tf-agents" {
     ]
 }
 
-resource "local_file" "create-hostname-file" {
-  count = length(var.hostnames)
-  filename = "${path.cwd}/hostname.${count.index + 1}"
-  content = <<-EOT
-  ${var.vm-name}-${count.index + 1}
-  EOT
-  depends_on = [
-    proxmox_vm_qemu.tf-agents
-  ]
-}
-
 resource "local_file" "create-inventory-file" {
   filename = "${path.cwd}/ansible/inventory.ini"
   content = <<-EOT
@@ -98,5 +87,4 @@ ${ip} ansible_user=centos
   %{endfor ~}
   
   EOT
-
 }
